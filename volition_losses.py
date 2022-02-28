@@ -24,6 +24,14 @@ def get_fit_loss_unidim_vectors(vol_model, critx=-1):
         # FIXME here
 
     else:
+        # to ensure positiveDefinite proprety
+        for v in range(len(vol_model.noise_std)):
+            print("hereeeeeeeeeeeeeeeeeeeeeeeee: ", vol_model.noise_std[v].item())
+
+            with torch.no_grad():
+                if vol_model.noise_std[v].item() <= 0.:
+                    vol_model.noise_std[v] = 1e-3
+
         mvn = MultivariateNormal(vol_model.noise_mean, torch.diag(vol_model.noise_std))
         for uid, node in zip(vol_model.nodes.keys(), vol_model.nodes.values()):
             assert len(node.rating) == len(node.weights)
@@ -57,7 +65,7 @@ def get_fit_loss_unidim_vectors(vol_model, critx=-1):
             #     normalized_y_data = y_data / torch.abs(y_data)
             normalized_y_data = y_data / torch.sqrt(torch.sum(y_data ** 2))
             # normalized_y_data = y_data / 1000
-            # print("y_data_normalized= ", normalized_y_data)
+            print("y_data_normalized= ", normalized_y_data)
             #y_data_noise = normalized_y_data / noise_norm
             exp = Exponential(1 / noise_norm)
             y_data_noise = exp.log_prob(normalized_y_data)

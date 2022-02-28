@@ -60,6 +60,7 @@ def test_generate_data_user():
 
     print(ground_truths)
 
+
 # ---------- volition_model.py ----------------
 
 def test_init_volition_model(nb_videos=None,
@@ -71,7 +72,6 @@ def test_init_volition_model(nb_videos=None,
                              path_folder=None,
                              vol_threshold=0.5
                              ):
-
     vol_model = Volition(nb_vids=nb_videos,
                          nb_user=nb_users,
                          nb_vid_user=vids_per_user,
@@ -150,7 +150,6 @@ def test_ml_run(nb_videos=None,
                 nb_epochs=600, opt_name="Adam",
                 path_folder=None, vol_threshold=0.5
                 ):
-
     ml_run_time = time()
     vol_model = test_init_volition_model(nb_videos=nb_videos,
                                          vids_per_user=vids_per_user, nb_users=nb_users,
@@ -171,7 +170,7 @@ def test_ml_run(nb_videos=None,
 
     logging.info(f'ml_run() total time : {time() - ml_run_time}')
 
-    return dist, train_hist, dist_file#, vol_model.performance_model()
+    return dist, train_hist, dist_file  # , vol_model.performance_model()
 
 
 def seedall(s):
@@ -185,29 +184,29 @@ def seedall(s):
     print("\nSeeded all to", s)
 
 
-def create_experiment_direc(parent_dir, opt_name, test_mode=True):
+def create_experiment_direc(parent_dir, opt_name):
+    path_file_result = f'{opt_name}_{int(time())}'
 
-    if test_mode:
-        path_file_result = f'{opt_name}_{int(time())}'
-        # Path
-        path = os.path.join(parent_dir, path_file_result)
-        try:
-            os.mkdir(path)
-            print("Directory '% s' created" % path_file_result)
-        except FileExistsError:
-            print("Directory ", path_file_result, " already exists")
+    # if test_mode:
+    # Path
+    path = os.path.join(parent_dir, path_file_result)
+    try:
+        os.mkdir(path)
+        print("Directory '% s' created" % path_file_result)
+    except FileExistsError:
+        print("Directory ", path_file_result, " already exists")
 
-        logging.basicConfig(filename=f"{parent_dir}{path_file_result}/logs_{path_file_result}.log", level=logging.DEBUG)
-        return path_file_result
+    logging.basicConfig(filename=f"{parent_dir}{path_file_result}/logs_{path_file_result}.log", level=logging.DEBUG)
 
-    else:
-        logging.basicConfig(filename=f"{parent_dir}logs.log", level=logging.DEBUG)
+    # else:
+    # logging.basicConfig(filename=f"{parent_dir}{path_file_result}/logs_{path_file_result}.log", level=logging.DEBUG)
+
+    return path_file_result
 
 
 def main_test_mode():
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
-
 
     nb_videos = 100000
     vids_per_user = 10
@@ -220,13 +219,12 @@ def main_test_mode():
     lr_node = 0.2
     lambd = 0.5
 
-    opt_name = "Adam"   #"Adam" or "rmsprop"
+    opt_name = "Adam"  # "Adam" or "rmsprop"
     nb_epochs = 100
 
     # creation 'plots' and result directories for visualization...
     # Parent Directory path
     parent_dir = "plots/"
-
 
     # test_generate_fake_scores()
     # test_generate_fake_comparisons()
@@ -236,12 +234,11 @@ def main_test_mode():
     # test_get_fit_loss()
 
     # test_reg_loss()
-    #seedall(9996465)
+    # seedall(9996465)
 
     nb_crit_step = 2
 
     for i in range(1):
-
         path_file_result = create_experiment_direc(parent_dir, opt_name)
         dist, train_hist, dist_file = test_ml_run(nb_videos=nb_videos,
                                                   vids_per_user=vids_per_user, nb_users=nb_users,
@@ -252,40 +249,39 @@ def main_test_mode():
                                                   path_folder=path_file_result, vol_threshold=0.5)
 
         plot_hist_results(train_hist, parent_dir, nb_epochs, file=dist_file, test_mode=True)
-        plot_dist_results(dist, opt_name, file_download=dist_file )
-    #plot_volition_results(vol_scores, nb_users, dist_file)
+        plot_dist_results(dist, opt_name, file_download=dist_file)
+    # plot_volition_results(vol_scores, nb_users, dist_file)
     # test_show_model_data()
 
 
 def main_real_data():
-
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
 
     device = "cpu"
     lr_gen = 0.00001
-    lr_node = 0.9
+    lr_node = 0.5
     lambd = 0.5
 
-    opt_name = "Adam"   #"Adam" or "rmsprop"
+    opt_name = "Adam"  # "Adam" or "rmsprop"
     nb_epochs = 100
 
     weights_list = [0, 0.5, 1, 1.5, 2]
     CRITERES = ["reliability", "importance", "engaging", "pedagogy", "layman_friendly", "diversity_inclusion",
-                      "backfire_risk", "better_habits", "entertaining_relaxing"]
+                "backfire_risk", "better_habits", "entertaining_relaxing"]
 
-    parent_dir = "tournesol_datasets/"
-    create_experiment_direc(parent_dir, opt_name, test_mode=False)
+    parent_dir = "tournesol_runs/"
+    path_file_result = create_experiment_direc(parent_dir, opt_name)
 
-    _, train_hist, _ = test_ml_run(weights_list=weights_list, CRITERES=CRITERES, test_mode=False,
-                                   device=device, lr_gen=lr_gen,
-                                   lr_node=lr_node, lambd=lambd,
-                                   nb_epochs=nb_epochs, opt_name=opt_name,
-                                   vol_threshold=0.5)
-    plot_hist_results(train_hist, parent_dir, nb_epochs, test_mode=False)
+    _, train_hist, path = test_ml_run(weights_list=weights_list, CRITERES=CRITERES, test_mode=False,
+                                      device=device, lr_gen=lr_gen,
+                                      lr_node=lr_node, lambd=lambd,
+                                      nb_epochs=nb_epochs, opt_name=opt_name, path_folder=path_file_result,
+                                      vol_threshold=0.5)
+    plot_hist_results(train_hist, parent_dir, nb_epochs, file=path, test_mode=False)
+
 
 if __name__ == "__main__":
-
-    #torch.autograd.set_detect_anomaly(True)
-    #main_real_data()
-    main_test_mode()
+    # torch.autograd.set_detect_anomaly(True)
+    main_real_data()
+    # main_test_mode()

@@ -8,7 +8,7 @@ from logging import info as loginf
 from .user_nodes import UserNode
 from .volition_losses import get_fit_loss, get_fit_loss_unidim_vectors, reg_loss, round_loss
 from ml.dev.volition.volition_fake_data import generate_data_user
-from ml.dev.volition.tournesol_dataset import _generate_data_user
+from ml.dev.volition.dataset_tournesol import _generate_data_user
 from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, ConstantLR, ExponentialLR
 import pickle
 
@@ -106,7 +106,8 @@ class Volition:
                 self.nb_videos, self.nb_user, self.nb_vid_user, self.weights_list, self.path_folder, self.criteria,
                 threshold=self.vol_factor)
         else:
-            self.user_data, self.users_ids, self.vid_vidx, self.nb_comps = _generate_data_user("comparison_database")
+            self.tournesol_dataset = "comparison_database"
+            self.user_data, self.users_ids, self.vid_vidx, self.nb_comps = _generate_data_user(self.tournesol_dataset, self.path_folder)
 
 
     def set_otimizer(self, name):
@@ -248,8 +249,8 @@ class Volition:
                 print("File", f'setting_file.txt', " not found")
 
         else:
-            parent_dir = "tournesol_datasets/"
-            file = open(f'{parent_dir}/settings.txt', "w")
+            parent_dir = "tournesol_runs/"
+            file = open(f'{parent_dir}{self.path_folder}/settings_{self.path_folder}.txt', "w")
             try:
                 file.write(
                            f"lr_gen: {self.lr_gen}\nlr_node: {self.lr_node}\n"
@@ -268,7 +269,7 @@ class Volition:
                 pickle.dump(dist_results, handle, protocol=pickle.HIGHEST_PROTOCOL)
             return dist_results, self.history, self.path_folder
         else:
-            return None, self.history, None
+            return None, self.history, self.path_folder
 
     def _set_lr(self):
         """Sets learning rates of optimizers"""
@@ -421,8 +422,8 @@ class Volition:
             file = open(f'{parent_dir}{self.path_folder}/results_{self.path_folder}.txt', "w")
 
         else:
-            parent_dir = "tournesol_datasets/"
-            file = open(f'{parent_dir}/results.txt', "w")
+            parent_dir = "tournesol_runs/"
+            file = open(f'{parent_dir}{self.path_folder}/results_{self.path_folder}.txt', "w")
 
         try:
             file.write("mean_noise_vector: "+str(saved_data[0].tolist())+"\n")

@@ -107,7 +107,7 @@ def plot_hist_results(train_hist, folder_name, epoch, file="test", test_mode=Tru
     if test_mode:
         _title_save("Loss = fit + reg", f'{folder_name}{file}/loss_{file}')
     else:
-        _title_save("Loss = fit + reg", f'{folder_name}loss')
+        _title_save("Loss = fit + reg", f'{folder_name}{file}/loss_{file}')
 
     plt.close()
     plt.plot(epochs, l_mean, label="noise_mean", linestyle='-', color='r')
@@ -117,7 +117,7 @@ def plot_hist_results(train_hist, folder_name, epoch, file="test", test_mode=Tru
     if test_mode:
         _title_save("mean (resp. std) of the model noise's 'mean vector' (resp. 'std matrix')", f'{folder_name}{file}/noise_{file}')
     else:
-        _title_save("mean (resp. std) of the model noise's 'mean vector' (resp. 'std matrix')", f'{folder_name}noise_params')
+        _title_save("mean (resp. std) of the model noise's 'mean vector' (resp. 'std matrix')", f'{folder_name}{file}/noise_{file}')
 
     plt.close()
 

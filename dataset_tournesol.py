@@ -82,7 +82,7 @@ def read_from_dataset(path_folder):
     return users_dict, user_comps_dict, rating_columns, len(users_dict.keys())
 
 
-def _generate_data_user(path_dataset, threshold=0.5):
+def _generate_data_user(path_dataset, path_folder):
     """ Generates fake input data for testing
 
     nb_vids (int): number of videos
@@ -103,8 +103,8 @@ def _generate_data_user(path_dataset, threshold=0.5):
     nb_criteria = len(criteria_list)
     arr_train, arr_test, train_nb_comps_ = split_data_train_test(all_user_comps_detail, comps_queries)
 
-    gene_create_train_test_arr_dataset(nb_criteria, arr_train, "train")
-    gene_create_train_test_arr_dataset(nb_criteria, arr_test, "test")
+    gene_create_train_test_arr_dataset(nb_criteria, arr_train, "train", path_folder)
+    gene_create_train_test_arr_dataset(nb_criteria, arr_test, "test", path_folder)
     arr_train = shape_data(criteria_list, arr_train)
     # all_user_comps_array = shape_data(all_user_comps_detail)
 
@@ -132,7 +132,7 @@ def split_data_train_test(arr, nb_comp, percen_test=0.2):
     return arr_train, arr_test, comp
 
 
-def gene_create_train_test_arr_dataset(nb_criteria, arr, name_split):
+def gene_create_train_test_arr_dataset(nb_criteria, arr, name_split, path_folder):
     import csv
 
     header = ["user_ID", "video_1", "video_2", "y_data", "Criterion", "rating", "weight"]
@@ -140,8 +140,8 @@ def gene_create_train_test_arr_dataset(nb_criteria, arr, name_split):
              arr.get(i)[ii][4 + j][0], arr.get(i)[ii][4 + j][1], arr.get(i)[ii][4 + j][2]]
             for i in (arr.keys()) for ii in range(len(arr.get(i))) for j in range(nb_criteria)]
     # open the file in the write mode
-    folder_name = 'tournesol_datasets'
-    with open(f'{folder_name}/{name_split}.csv', 'w', encoding='UTF8', newline='') as f:
+    folder_name = 'tournesol_runs/'
+    with open(f'{folder_name}{path_folder}/{name_split}.csv', 'w', encoding='UTF8', newline='') as f:
         # create the csv writer
         writer = csv.writer(f)
 

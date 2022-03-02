@@ -84,12 +84,10 @@ def read_from_dataset(path_folder):
 
 def _generate_data_user(path_dataset, path_folder):
     """ Generates fake input data for testing
-
     nb_vids (int): number of videos
     nb_user (int): number of users
     vids_per_user (int): number of videos rated by each user
     scale (float): variance/std of global scores
-
     Returns:
          (5-uplet): _ user_data(dictionnary): {userID: (vID1_batch, vID2_batch, rating_batch,
                             weights_batch, crit_index_array, y_batch, single_vIDs, mask)}
@@ -97,7 +95,6 @@ def _generate_data_user(path_dataset, path_folder):
                     _ vid_vidx (dict) : vid:vidx
                     _ comps_queries (dict) : user_id : number of comparaison queries
                     _ ground truth (multi-dimensional array) [[[volitions], [preferences]] for all users]+
-
     """
     all_user_comps_detail, comps_queries, criteria_list, nb_users = read_from_dataset(path_dataset)
     nb_criteria = len(criteria_list)
@@ -154,16 +151,14 @@ def gene_create_train_test_arr_dataset(nb_criteria, arr, name_split, path_folder
 
 def shape_data(criteria, arr):
     """Shapes data for distribute_data()/distribute_data_from_save()
-
     l_ratings : list of not None ratings ([0,100]) for one criteria, all users
-
     Returns : one array with 4 columns : userID, vID1, vID2, rating ([-1,1])
     """
     l_data = []
 
     for uid, comps in zip(arr.keys(), arr.values()):
         list_crit = [
-            rating[:4] + [criteria.index(rating[4 + i][0])] + [_rescale_rating(rating[4 + i][1])] + [rating[4 + i][2]]
+            rating[:4] + [criteria.index(rating[4 + i][0])] + [_rescale_rating(rating[4 + i][1])] + [_encode_weights(rating[4 + i][2], rating[4 + i][1])]
             for rating in comps for i in range(len(criteria))]
         l_data += list_crit
     return np.asarray(l_data)
@@ -171,19 +166,29 @@ def shape_data(criteria, arr):
 def _rescale_rating(r):
 
     if r == -1.0:
-        return 0.0
+        return r
     else:
-        return (r+50) / 100
+        #return (r+50) / 100
+        return r / 100
+
+def _encode_weights(w, r):
+
+    if r != -1:
+        if w == 0.:
+            return 1.
+        elif w == 1.:
+            return 1.5
+        else:
+            return w
+    else:
+        return 0
 def distribute_data(arr, nb_user, device="cpu"):
     """Distributes data on nodes according to user IDs for one criteria
         Output is not compatible with previously stored models,
            ie starts from scratch
-
     arr (2D array): all ratings for all users for one criteria
                         (one line is [userID, vID1, vID2, y_data, crit_index, rating, weight])
     device (str): device to use (cpu/gpu)
-
-
     Returns:
     - dictionnary {userID: (vID1_batch, vID2_batch, rating_batch,
                             weights_batch, crit_index_array,
@@ -235,5 +240,5 @@ def distribute_data(arr, nb_user, device="cpu"):
     return user_dic, user_ids, vid_vidx
 
 
-if __name__ == "__main__":
-    user_comp_dics, user_ids, vid_vidx, train_nb_comps = generate_data_user("comparison_database")
+#if __name__ == "__main__":
+    #user_comp_dics, user_ids, vid_vidx, train_nb_comps = generate_data_user("comparison_database")

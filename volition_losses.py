@@ -40,7 +40,7 @@ def get_fit_loss_unidim_vectors(vol_model, critx=-1):
             noise = (node.preference_model - node.volition_model)  # - vol_model.noise_mean) / vol_model.noise_std
             #noise = torch.nan_to_num(noise)
             #prob_noise = sum([1 / 2 * torch.matmul(torch.matmul((noise - vol_model.noise_mean), torch.linalg.inv(vol_model.noise_std * torch.eye(vol_model.nb_criteria))).T, (noise - vol_model.noise_mean))])  # for the case of vol_model and prefe_model unid vectors
-            print("noise= ", noise)
+            #print("noise= ", noise)
             prob_noise = mvn.log_prob(noise)
             #prob_noise = pb_noise(noise, vol_model.noise_mean, vol_model.noise_std)
             ratings = [node.rating[i:i + vol_model.nb_criteria] for i in
@@ -50,7 +50,6 @@ def get_fit_loss_unidim_vectors(vol_model, critx=-1):
                              range(0, len(node.weights), vol_model.nb_criteria)]), dim=0)
             #print("weights= ", weights)
             bradly = bradly_node_unidim_vectors(node.volition_model, noise, ratings, weights, vol_model.nb_criteria)
-            print("bradely_before= ", bradly)
             print("r ", len(ratings), " bradely ", len(bradly), " weighting ", len(weights), node.nb_comps)
             bradly = sum([torch.log(bradly[i]) for i in range(node.nb_comps)])
             print("bradely_after= ", bradly)
@@ -65,7 +64,7 @@ def get_fit_loss_unidim_vectors(vol_model, critx=-1):
             #     normalized_y_data = y_data / torch.abs(y_data)
             normalized_y_data = y_data / torch.sqrt(torch.sum(y_data ** 2))
             # normalized_y_data = y_data / 1000
-            print("y_data_normalized= ", normalized_y_data)
+            #print("y_data_normalized= ", normalized_y_data)
             #y_data_noise = normalized_y_data / noise_norm
             exp = Exponential(1 / noise_norm)
             y_data_noise = exp.log_prob(normalized_y_data)
@@ -76,7 +75,7 @@ def get_fit_loss_unidim_vectors(vol_model, critx=-1):
                         y_data_noise[i] = normalized_y_data[i].item()
 
             y_data_noise = y_data_noise.sum()
-            print("y_data_noise_2= ", y_data_noise)
+            #print("y_data_noise_2= ", y_data_noise)
             fit_loss += -prob_noise - bradly - y_data_noise
             #reg_loss += reg_loss_per_node(vol_model.nb_criteria, vol_model.lambd, uid, node, c_max=c_reg)
             print(f"user {uid}---> Loss: {fit_loss} y_data_noise: {y_data_noise}, "f"prob_noise: {prob_noise}, bradly: {bradly}")
@@ -215,8 +214,9 @@ def bradly_node(vol_model, noise, ratings, weights, nb_comp):
 
 def bradly_node_unidim_vectors(vol_model, noise, ratings, weights, nb_crit):
     assert nb_crit == len(vol_model) == len(noise)
-    t = [torch.sigmoid(torch.matmul(vol_model + noise, torch.mul(weights[i], ratings[i]))) for i in range(len(ratings))]
-    #t = [torch.sigmoid(weights[i] * t[i]) for i in range(len(ratings))]
+    #t = [torch.sigmoid(torch.matmul(vol_model + noise, ratings[i])) for i in range(len(ratings))]
+    t = [torch.sigmoid(torch.matmul(vol_model + noise, weights[i] * ratings[i])) for i in range(len(ratings))]
+
     return t
 
 

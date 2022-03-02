@@ -259,14 +259,15 @@ def main_real_data():
         logging.root.removeHandler(handler)
 
     device = "cpu"
-    lr_gen = 0.00001
-    lr_node = 0.5
+    lr_gen = 0.1
+    lr_node = 0.2
     lambd = 0.5
 
     opt_name = "Adam"  # "Adam" or "rmsprop"
-    nb_epochs = 100
+    nb_epochs = 500
 
-    weights_list = [0, 0.5, 1, 1.5, 2]
+
+    weights_list = [0, 0.5, 1, 2]
     CRITERES = ["reliability", "importance", "engaging", "pedagogy", "layman_friendly", "diversity_inclusion",
                 "backfire_risk", "better_habits", "entertaining_relaxing"]
 

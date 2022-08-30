@@ -216,11 +216,11 @@ def main_test_mode():
 
     device = "cpu"
     lr_gen = 0.001
-    lr_node = 0.2
+    lr_node = 0.02
     lambd = 0.5
-
+    vol_factor = 0.2
     opt_name = "Adam"  # "Adam" or "rmsprop"
-    nb_epochs = 100
+    nb_epochs = 1000
 
     # creation 'plots' and result directories for visualization...
     # Parent Directory path
@@ -242,11 +242,11 @@ def main_test_mode():
         path_file_result = create_experiment_direc(parent_dir, opt_name)
         dist, train_hist, dist_file = test_ml_run(nb_videos=nb_videos,
                                                   vids_per_user=vids_per_user, nb_users=nb_users,
-                                                  weights_list=weights_list, CRITERES=CRITERES, test_mode=True,
+                                                  weights_list=weights_list, CRITERES=CRITERES[:1], test_mode=True,
                                                   device=device, lr_gen=lr_gen,
                                                   lr_node=lr_node, lambd=lambd,
                                                   nb_epochs=nb_epochs, opt_name=opt_name,
-                                                  path_folder=path_file_result, vol_threshold=0.5)
+                                                  path_folder=path_file_result, vol_threshold=vol_factor)
 
         plot_hist_results(train_hist, parent_dir, nb_epochs, file=dist_file, test_mode=True)
         plot_dist_results(dist, opt_name, file_download=dist_file)
@@ -259,20 +259,20 @@ def main_real_data():
         logging.root.removeHandler(handler)
 
     device = "cpu"
-    lr_gen = 0.00001
-    lr_node = 0.5
-    lambd = 0.5
+    lr_gen = 0.000001
+    lr_node = 0.25
+    lambd = 0.1
 
     opt_name = "Adam"  # "Adam" or "rmsprop"
-    nb_epochs = 100
+    nb_epochs = 500
 
-    weights_list = [0, 0.5, 1, 1.5, 2]
+
+    weights_list = [0, 0.5, 1, 1.3, 1.5]
     CRITERES = ["reliability", "importance", "engaging", "pedagogy", "layman_friendly", "diversity_inclusion",
                 "backfire_risk", "better_habits", "entertaining_relaxing"]
 
     parent_dir = "tournesol_runs/"
     path_file_result = create_experiment_direc(parent_dir, opt_name)
-
     _, train_hist, path = test_ml_run(weights_list=weights_list, CRITERES=CRITERES, test_mode=False,
                                       device=device, lr_gen=lr_gen,
                                       lr_node=lr_node, lambd=lambd,
@@ -284,4 +284,4 @@ def main_real_data():
 if __name__ == "__main__":
     # torch.autograd.set_detect_anomaly(True)
     main_real_data()
-    # main_test_mode()
+    #main_test_mode()

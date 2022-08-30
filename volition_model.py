@@ -26,11 +26,13 @@ def get_preference_model(nb_comp, nb_crit, device="cpu"):
 
 
 def get_glob_noise_mean(nb_crit, device="cpu"):
-    return torch.zeros(nb_crit, requires_grad=True, device=device)
+    #return torch.zeros(nb_crit, requires_grad=True, device=device)
+    return torch.distributions.uniform.Uniform(-1, 1).sample([nb_crit]).requires_grad_().to(device)
 
 
 def get_glob_noise_cov(nb_crit, device="cpu"):
-    return torch.ones(nb_crit, requires_grad=True, device=device)
+    #return torch.ones(nb_crit, requires_grad=True, device=device)
+    return torch.distributions.uniform.Uniform(0, 1).sample([nb_crit]).requires_grad_().to(device)
 
 
 class Volition:

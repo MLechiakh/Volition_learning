@@ -16,21 +16,24 @@ from ml.dev.volition.volition_utils import (
 
 def read_from_dataset(path_folder):
     rating_columns = ["reliability", "importance", "engaging", "pedagogy", "layman_friendly", "diversity_inclusion",
-                      "backfire_risk", "better_habits", "entertaining_relaxing"]
+                      "backfire_risk", "better_habits", "entertaining_relaxing", "largely_recommended"]
     weight_columns = ["reliability_weight", "importance_weight", "engaging_weight", "pedagogy_weight",
                       "layman_friendly_weight", "diversity_inclusion_weight",
-                      "backfire_risk_weight", "better_habits_weight", "entertaining_relaxing_weight"]
+                      "backfire_risk_weight", "better_habits_weight",
+                      "entertaining_relaxing_weight", "largely_recommended_weight"]
     other_columns = ["id", "user__user__username", "video_1__video_id", "video_2__video_id", "duration_ms"]
 
     with open(f'{path_folder}.csv', mode='r', newline='') as csv_data:
         csv_reader = csv.DictReader(csv_data)
         users_arr = []
         all_users = []
-        weights = []
+        cc = 0
+        ct = 0
         for row in csv_reader:
             all_users += [row[other_columns[1]]]
-            if row["duration_ms"] != '0.0' and float(row["duration_ms"]) < 900000.0:
+            if float(row["duration_ms"]) > 0. and float(row["duration_ms"]) < 900000.:
                 ratings = []
+                weights = []
                 for i in range(len(weight_columns)):
                     if row[rating_columns[i]] == "":
                         ratings.append(-1.0)
@@ -38,12 +41,16 @@ def read_from_dataset(path_folder):
                     else:
                         ratings.append(float(row[rating_columns[i]]))
                         weights += [float(row[weight_columns[i]])]
+                        if float(row[weight_columns[i]])==0.5:
+                            cc += 1
+                    ct += 1
                 temp = [(rating_columns[i], float(ratings[i]), float(weights[i])) for i in range(len(ratings))]
+
                 watching_infos = [row[other_columns[1]], row[other_columns[2]], row[other_columns[3]],
                                   float(row[other_columns[4]])]
                 user_raw = watching_infos + temp
                 users_arr += [user_raw]
-
+        print("hhhhhhhhhhhhhhh ", cc, "", ct)
         users_arr = sorted(users_arr, key=lambda x: x[0])
 
     # map string columns to integers
@@ -53,10 +60,19 @@ def read_from_dataset(path_folder):
     ids_vids = np.unique(np.concatenate((np.array(users_arr)[:,1], np.array(users_arr)[:, 2]), axis=0)).tolist()
     print("number of videos: ", len(ids_vids))
     users_arr_encoded = []
+    users_arr_encoded_model = []
     for user_data in users_arr:
         temp = [ids_users.index(user_data[0]), ids_vids.index(user_data[1]), ids_vids.index(user_data[2])]
         users_arr_encoded += [temp + user_data[3:]]
+        user_data.pop()
+        users_arr_encoded_model += [temp + user_data[3:]]
+    users_dict, user_comps_dict = build_users_data(users_arr_encoded)
+    users_dict_model, user_comps_dict_model = build_users_data(users_arr_encoded_model)
 
+
+    return users_dict, user_comps_dict, users_dict_model, user_comps_dict_model, rating_columns, len(users_dict.keys())
+
+def build_users_data(users_arr_encoded):
     user_comps_dict = {}
     users_dict = {}
     temp = []
@@ -79,7 +95,7 @@ def read_from_dataset(path_folder):
     user_comps_dict.update({uid: count})
     users_dict.update({uid: temp})
 
-    return users_dict, user_comps_dict, rating_columns, len(users_dict.keys())
+    return users_dict, user_comps_dict
 
 
 def _generate_data_user(path_dataset, path_folder):
@@ -96,12 +112,15 @@ def _generate_data_user(path_dataset, path_folder):
                     _ comps_queries (dict) : user_id : number of comparaison queries
                     _ ground truth (multi-dimensional array) [[[volitions], [preferences]] for all users]+
     """
-    all_user_comps_detail, comps_queries, criteria_list, nb_users = read_from_dataset(path_dataset)
+    all_user_comps_detail, comps_queries, users_dict_model, user_comps_dict_model, criteria_list, nb_users = \
+        read_from_dataset(path_dataset)
     nb_criteria = len(criteria_list)
-    arr_train, arr_test, train_nb_comps_ = split_data_train_test(all_user_comps_detail, comps_queries)
+    to_dataset_arr_train, to_dataset_arr_test, _ = split_data_train_test(all_user_comps_detail, comps_queries)
 
-    gene_create_train_test_arr_dataset(nb_criteria, arr_train, "train", path_folder)
-    gene_create_train_test_arr_dataset(nb_criteria, arr_test, "test", path_folder)
+    arr_train, arr_test, train_nb_comps_ = split_data_train_test(users_dict_model, user_comps_dict_model)
+
+    gene_create_train_test_arr_dataset(nb_criteria, to_dataset_arr_train, "train", path_folder)
+    gene_create_train_test_arr_dataset(nb_criteria, to_dataset_arr_test, "test", path_folder)
     arr_train = shape_data(criteria_list, arr_train)
     # all_user_comps_array = shape_data(all_user_comps_detail)
 
@@ -158,8 +177,9 @@ def shape_data(criteria, arr):
 
     for uid, comps in zip(arr.keys(), arr.values()):
         list_crit = [
-            rating[:4] + [criteria.index(rating[4 + i][0])] + [_rescale_rating(rating[4 + i][1])] + [_encode_weights(rating[4 + i][2], rating[4 + i][1])]
-            for rating in comps for i in range(len(criteria))]
+            rating[:4] + [criteria.index(rating[4 + i][0])] + [_rescale_rating(rating[4 + i][1])] +
+            [_encode_weights(rating[4 + i][2], rating[4 + i][1])]
+            for rating in comps for i in range(len(criteria) - 1)]
         l_data += list_crit
     return np.asarray(l_data)
 
@@ -177,7 +197,7 @@ def _encode_weights(w, r):
         if w == 0.:
             return 1.
         elif w == 1.:
-            return 1.5
+            return 1.3
         else:
             return w
     else:

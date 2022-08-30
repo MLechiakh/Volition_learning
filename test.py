@@ -104,11 +104,12 @@ def perfrmance_model():
     return user_vol_dic
 
 
-def mean_std(experiment_name, v):
+def mean_std(experiment_name, mean_gt, std_gt):
     import csv
     import numpy as np
     import pickle
 
+    v = len(mean_gt)
     # recover data from test_file
     with open(f'plots/{experiment_name}/test_{experiment_name}.csv', mode='r', newline='') as csv_data:
         csv_reader = csv.DictReader(csv_data)
@@ -123,8 +124,8 @@ def mean_std(experiment_name, v):
             else:
                 break
 
-        mean = np.linalg.norm(mean) / v
-        std = np.linalg.norm(std) / v
+        mean = np.linalg.norm(np.array(mean) - np.array(mean_gt))
+        std = np.linalg.norm(np.array(std) - np.array(std_gt))
         print(mean, std)
 
     with open(f'plots/{experiment_name}/{experiment_name}.pickle', 'rb') as handle:
@@ -195,31 +196,16 @@ def read_from_dataset(path_folder):
     print(sum([i for i in user_comps_dict.values()]))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
-    read_from_dataset("comparison_database")
+    #read_from_dataset("comparison_database")
 
-    # mean_std("Adam_1642238587", 10)
+    mean_vector = [-0.0005781164509244263, 0.0006221878575161099, 0.0022539354395121336, 1.936503394972533e-06,
+                  0.00025755283422768116, 0.0007707903278060257, 0.00133400852791965, 0.0288272462785244,
+                  0.14722806215286255]
+    std_factor = [0.1875688135623932, 0.07390553504228592, 0.1843082159757614, 0.12553288042545319, 0.08145280927419662,
+                 0.0325317457318306, 0.13096390664577484, 0.185774028301239, 0.28350725769996643]
+
+    mean_std("Adam_1656974847", mean_vector, std_factor)
     # plot_dist_results(None,"Adam optimizer", file_upload = "Adam_1641986778")
 
     # test_generate_fake_comparisons()

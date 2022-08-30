@@ -1,7 +1,6 @@
 import torch
 from torch.distributions.multivariate_normal import MultivariateNormal
 from torch.distributions.exponential import Exponential
-
 from logging import info as loginf
 
 """
@@ -26,18 +25,20 @@ def get_fit_loss_unidim_vectors(vol_model, critx=-1):
     else:
         # to ensure positiveDefinite proprety
         for v in range(len(vol_model.noise_std)):
-            print("hereeeeeeeeeeeeeeeeeeeeeeeee: ", vol_model.noise_std[v].item())
 
             with torch.no_grad():
                 if vol_model.noise_std[v].item() <= 0.:
                     vol_model.noise_std[v] = 1e-3
+                if vol_model.noise_mean[v].item() <= 0.:
+                    vol_model.noise_mean[v] = 1e-3
 
         mvn = MultivariateNormal(vol_model.noise_mean, torch.diag(vol_model.noise_std))
+
         for uid, node in zip(vol_model.nodes.keys(), vol_model.nodes.values()):
             assert len(node.rating) == len(node.weights)
             assert len(node.preference_model) == len(node.volition_model)
 
-            noise = (node.preference_model - node.volition_model)  # - vol_model.noise_mean) / vol_model.noise_std
+            noise = (node.preference_model - node.volition_model - vol_model.noise_mean) / vol_model.noise_std
             #noise = torch.nan_to_num(noise)
             #prob_noise = sum([1 / 2 * torch.matmul(torch.matmul((noise - vol_model.noise_mean), torch.linalg.inv(vol_model.noise_std * torch.eye(vol_model.nb_criteria))).T, (noise - vol_model.noise_mean))])  # for the case of vol_model and prefe_model unid vectors
             #print("noise= ", noise)
@@ -50,11 +51,11 @@ def get_fit_loss_unidim_vectors(vol_model, critx=-1):
                              range(0, len(node.weights), vol_model.nb_criteria)]), dim=0)
             #print("weights= ", weights)
             bradly = bradly_node_unidim_vectors(node.volition_model, noise, ratings, weights, vol_model.nb_criteria)
-            print("r ", len(ratings), " bradely ", len(bradly), " weighting ", len(weights), node.nb_comps)
+            #print("r ", len(ratings), " bradely ", len(bradly), " weighting ", len(weights), node.nb_comps)
             bradly = sum([torch.log(bradly[i]) for i in range(node.nb_comps)])
-            print("bradely_after= ", bradly)
-            noise_norm = torch.linalg.vector_norm(noise)  # for the case of vol_model and prefe_model unid vectors
-            print("noise_norm= ", noise_norm)
+            #print("bradely_after= ", bradly)
+            noise_norm = torch.linalg.vector_norm(vol_model.noise_mean)  # for the case of vol_model and prefe_model unid vectors
+            #print("noise_norm= ", noise_norm)
             index = torch.tensor([i * vol_model.nb_criteria for i in range(node.nb_comps)])
             y_data = torch.index_select(node.y_data, 0, index)
             # print("y_data= ", y_data)
@@ -62,12 +63,13 @@ def get_fit_loss_unidim_vectors(vol_model, critx=-1):
             #     normalized_y_data = (y_data - torch.min(y_data)) / (torch.max(y_data) - torch.min(y_data))
             # else:
             #     normalized_y_data = y_data / torch.abs(y_data)
-            normalized_y_data = y_data / torch.sqrt(torch.sum(y_data ** 2))
-            # normalized_y_data = y_data / 1000
+            #normalized_y_data = y_data / torch.sqrt(torch.sum(y_data ** 2))
+            normalized_y_data = y_data / 100000
             #print("y_data_normalized= ", normalized_y_data)
             #y_data_noise = normalized_y_data / noise_norm
-            exp = Exponential(1 / noise_norm)
-            y_data_noise = exp.log_prob(normalized_y_data)
+            #exp = Exponential(noise_norm)
+            #y_data_noise = exp.log_prob(normalized_y_data)
+            y_data_noise = torch.log(noise_norm * torch.exp(-noise_norm * normalized_y_data))
             #print("y_data_noise_1= ", y_data_noise)
             for i in range(len(y_data_noise)):
                 if y_data_noise[i] == float('inf') or y_data_noise[i] == -float('inf'):
@@ -78,10 +80,11 @@ def get_fit_loss_unidim_vectors(vol_model, critx=-1):
             #print("y_data_noise_2= ", y_data_noise)
             fit_loss += -prob_noise - bradly - y_data_noise
             #reg_loss += reg_loss_per_node(vol_model.nb_criteria, vol_model.lambd, uid, node, c_max=c_reg)
-            print(f"user {uid}---> Loss: {fit_loss} y_data_noise: {y_data_noise}, "f"prob_noise: {prob_noise}, bradly: {bradly}")
+            #print(f"user {uid}---> Loss: {fit_loss} y_data_noise: {y_data_noise}, "f"prob_noise: {prob_noise}, bradly: {bradly}")
             loginf(f"user {uid}--->fit_loss: {fit_loss}, y_data_noise: {y_data_noise},"
                    f" prob_noise: {prob_noise}, bradly: {bradly}")
             #print("reg, fit", reg_loss, fit_loss)
+
     return fit_loss
 
 

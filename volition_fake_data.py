@@ -21,7 +21,7 @@ CRITERES = ["A", "B"]#["A", "B", "C", "D"] # ["A"]
 NB_CRITERIAS = len(CRITERES)
 
 # factor to judge volitional preferences
-vol_factor = 0.5
+vol_factor = 0.2
 
 
 def set_global_variables(criteria, vol_threshold):
@@ -32,7 +32,7 @@ def set_global_variables(criteria, vol_threshold):
     NB_CRITERIAS = len(criteria)
     vol_factor = vol_threshold
 
-def generate_fake_scores(nb_crit, scale=1):
+def generate_fake_scores(nb_crit, scale=0.5):
     """Creates fake volition and preference scores for simulation
 
     nb_features (int): number of video representation features "generated"
@@ -82,7 +82,7 @@ def _get_rd_rate(scores):
 
 
 def generate_fake_comparisons(nb_vids, distribution, weight_list,
-                              scale=1, dens=0.5):
+                              scale=0.1, dens=0.5):
     """
 
     nb_vids (int): number of videos
@@ -267,7 +267,7 @@ def distribute_data(arr, nb_user, device="cpu"):
 
 
 def generate_data_user(
-        nb_videos, nb_users, vids_per_user, weights_values, path, criteria, threshold=0.5, scale=1, dens=0.5):
+        nb_videos, nb_users, vids_per_user, weights_values, path, criteria, threshold=0.5, scale=0.5, dens=0.5):
     """ Generates fake input data for testing
 
     nb_vids (int): number of videos
@@ -329,7 +329,8 @@ def gene_create_train_test_arr_dataset(gt, arr, name_split, path):
     mu = np.mean(noise, axis=0)
     st = np.std(noise, axis=0)
     l_vol_or_pref = np.array(l_vol_or_pref)
-    header = ["user_ID", "video_1", "video_2", "y_data", "Criterion", "volition", "rating", "weight", "mean_noise_per_crit", "std_noise_per_crit"]
+    header = ["user_ID", "video_1", "video_2", "y_data", "Criterion", "volition", "rating", "weight",
+              "mean_noise_per_crit", "std_noise_per_crit"]
     data = [[arr[i][ii][0], arr[i][ii][1], arr[i][ii][2], arr[i][ii][3],
              arr[i][ii][4 + j][0], l_vol_or_pref[i][ii][0], arr[i][ii][4 + j][1], arr[i][ii][4 + j][2], mu[j], st[j]]
             for i in range(len(l_vol_or_pref)) for ii in range(len(arr[i])) for j in range(NB_CRITERIAS)]
